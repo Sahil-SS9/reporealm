@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>{{TITLE}}</title>
+<meta name="description" content="RepoRealm - a first-person portal puzzle built from a real repository's import graph." />
+<link rel="icon" href="data:," />
+<style>
+  :root{
+    --ink:#08080b; --ink-2:#0d1015; --paper:#e8e2d6; --dim:#a49d8e;
+    --amber:#ffd166; --red:#e03a52; --blue:#3fa9ff; --orange:#ff8a3d; --green:#7ce0a0;
+    --mono: ui-monospace, "DejaVu Sans Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--ink);color:var(--paper);
+    font:14px/1.5 var(--mono);overflow:hidden;-webkit-font-smoothing:antialiased}
+  #sd-root{position:fixed;inset:0;overflow:hidden;background:var(--ink)}
+  #sd-root:focus{outline:none}
+
+  /* ---------------------------------------------------------------- stage */
+  .sd-stage{position:absolute;inset:0}
+  .sd-canvas{display:block;width:100%;height:100%;background:#0b0d11;cursor:crosshair;touch-action:none}
+  .sd-vignette{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 95% at 50% 45%, transparent 42%, rgba(0,0,0,.62) 100%),
+               radial-gradient(70% 40% at 50% 0%, rgba(255,160,90,.07), transparent 72%)}
+  /* CRT overlay: boot and title only. It is switched on by the .sd-crt class the
+     UI puts on #sd-root while a menu surface owns the screen, so scanlines can
+     never smear over CRITICAL HUD copy inside gameplay. */
+  .sd-scanlines{position:absolute;inset:0;pointer-events:none;display:none;z-index:30;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.26) 0 1px, rgba(0,0,0,0) 1px 3px),
+               radial-gradient(120% 95% at 50% 45%, transparent 46%, rgba(0,0,0,.55) 100%)}
+  #sd-root.sd-crt .sd-scanlines{display:block}
+
+  /* ---- boot: a 1995 console card, then the wordmark ---- */
+  .sd-boot{position:absolute;inset:0;z-index:40;display:grid;place-items:center;
+    background:
+      radial-gradient(120% 85% at 50% 108%, rgba(255,138,61,.42), transparent 62%),
+      radial-gradient(85% 55% at 50% 112%, rgba(255,209,102,.30), transparent 70%),
+      linear-gradient(180deg,#150a24 0%, #24102b 34%, #3a1226 62%, #0a0710 100%)}
+  .sd-boot-inner{text-align:center;padding:24px;max-width:min(720px,92vw)}
+  .sd-boot-studio{color:#ffd9a8;font-size:clamp(16px,2.6vw,22px);letter-spacing:.34em;
+    text-transform:uppercase;text-shadow:0 0 18px rgba(255,150,80,.6)}
+  .sd-boot-card-line{color:rgba(255,226,196,.72);font-size:12px;letter-spacing:.22em;margin-top:10px}
+  .sd-boot-mark{font-size:clamp(30px,8.5vw,76px);line-height:1;letter-spacing:.14em;font-weight:700;
+    color:#fff2d6;text-shadow:0 0 26px rgba(255,150,70,.55), 0 3px 0 #7a2a3c;margin:0}
+  .sd-boot-rule{height:2px;background:linear-gradient(90deg,transparent,#ffb066,transparent);margin:14px auto;width:min(520px,80%)}
+  .sd-boot-foot{position:absolute;bottom:18px;left:0;right:0;text-align:center;
+    color:rgba(255,226,196,.55);font-size:11px;letter-spacing:.26em;text-transform:uppercase}
+  .sd-boot .sd-hidden{display:none}
+
+  /* hint surfaces: the panel floats above the bottom stack and the chip is
+     absolutely placed, so neither of them adds a row to the growth-upwards
+     stack — hint use must never eat the objective clearance at small sizes. */
+  .sd-hintpanel{position:absolute;right:0;bottom:100%;margin-bottom:10px;
+    max-width:min(84ch,100%);overflow-wrap:anywhere;color:var(--paper);font-size:16px;line-height:1.45;
+    padding:8px 12px;background:rgba(8,8,12,.92);border:1px solid rgba(255,209,102,.34)}
+  .sd-hintchip{position:absolute;right:0;bottom:0;font-size:11px;letter-spacing:.14em;
+    padding:6px 10px;background:rgba(8,8,12,.88);border:1px solid rgba(232,226,214,.22);color:var(--paper);
+    pointer-events:auto}
+  .sd-hintchip:hover,.sd-hintchip:focus-visible{border-color:var(--amber);color:var(--amber)}
+
+  /* ---------------------------------------------------------------- HUD */
+  .sd-hud{position:absolute;inset:0;pointer-events:none;font:16px/1.45 var(--mono);
+    letter-spacing:.04em;text-shadow:0 1px 2px rgba(0,0,0,.85)}
+  .sd-crosshair{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px}
+  .sd-dot{position:absolute;left:50%;top:50%;width:3px;height:3px;margin:-1.5px 0 0 -1.5px;
+    background:rgba(232,226,214,.9);border-radius:50%}
+  .sd-ring{position:absolute;inset:6px;border:1px solid rgba(232,226,214,.34);border-radius:50%;
+    transition:border-color .12s, transform .12s, opacity .12s}
+  .sd-ring-ok{border-color:rgba(255,209,102,.85);transform:scale(.86)}
+  .sd-ring-cube{border-color:rgba(255,209,102,.9);border-radius:3px;transform:scale(.8) rotate(45deg)}
+  .sd-ring-use{border-color:rgba(124,224,160,.9);transform:scale(.8)}
+  .sd-ring-bad{border-color:rgba(224,58,82,.75);opacity:.85}
+
+  .sd-header{position:absolute;top:16px;left:16px;right:16px;display:grid;
+    grid-template-columns:minmax(0,1fr) auto;gap:8px 20px;align-items:start}
+  .sd-top{grid-column:1;min-width:0;overflow-wrap:anywhere}
+  .sd-chamber{color:var(--amber);font-weight:700;letter-spacing:.14em;font-size:16px}
+  .sd-repo{color:rgba(232,226,214,.72);font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+  .sd-objective{grid-column:1;max-width:46ch;overflow-wrap:anywhere;color:var(--paper);font-size:16px;
+    padding:8px 12px;background:rgba(8,8,12,.88);border:1px solid rgba(255,209,102,.22)}
+  .sd-status{grid-column:2;grid-row:1 / 3;text-align:right;display:flex;gap:14px;align-items:center;
+    padding:8px 12px;background:rgba(8,8,12,.88);border:1px solid rgba(255,209,102,.18)}
+  .sd-slots{display:flex;gap:8px}
+  .sd-slot{width:28px;height:28px;border:1px solid rgba(255,255,255,.25);display:grid;
+    place-items:center;font-style:normal;font-weight:700;letter-spacing:0;flex:none}
+  .sd-slot.sd-active{color:#08080b;text-shadow:none}
+  .sd-slot-blue.sd-active{background:var(--blue);border-color:var(--blue);box-shadow:0 0 10px rgba(63,169,255,.8)}
+  .sd-slot-orange.sd-active{background:var(--orange);border-color:var(--orange);box-shadow:0 0 10px rgba(255,138,61,.8)}
+  .sd-plates{color:var(--paper);font-size:16px;letter-spacing:.08em}
+
+  .sd-bottom{position:absolute;bottom:16px;left:16px;right:16px;display:flex;flex-direction:column;gap:8px}
+  .sd-feedback{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.55fr);gap:12px;align-items:end}
+  /* The bottom stack is anchored to the fold and grows upwards, so every wrapped
+     line of the toast or the subtitle eats the clearance to the top-anchored
+     objective panel. The longest refusal in the real payload is 317 characters:
+     at 62ch the toast took 7 lines and the subtitle cue (127 chars at 70ch, 3
+     lines) overprinted the tests-chamber objective by 14.4 px with a long aim
+     label on screen. 84ch is still one readable centred column (< 100 chars a
+     line) and drops the same pair to 5 + 2 lines, leaving 55.1 px of clearance
+     in the worst measured case. Widen, do not narrow, without re-measuring. */
+  .sd-subtitle{align-self:center;width:min(84ch,100%);overflow-wrap:anywhere;
+    text-align:center;font-style:italic;color:var(--paper);font-size:16px;
+    background:rgba(6,7,10,.92);border-left:2px solid var(--amber);padding:8px 16px;
+    opacity:0;transition:opacity .25s;pointer-events:none}
+  .sd-subtitle.sd-show{opacity:1}
+  .sd-subtitle:not(.sd-show),.sd-toast:not(.sd-show){display:none}
+  .sd-toast{align-self:center;max-width:min(84ch,100%);overflow-wrap:anywhere;
+    text-align:center;font-size:16px;letter-spacing:.03em;
+    color:var(--paper);background:rgba(8,9,13,.9);border:1px solid rgba(255,209,102,.3);
+    padding:7px 15px;opacity:0;transition:opacity .16s}
+  .sd-toast.sd-show{opacity:1}
+  .sd-toast-bad{border-color:var(--red);color:#ffb3bd}
+  .sd-toast-good{border-color:var(--green);color:#c8f5d8}
+  .sd-hint{min-width:0;overflow-wrap:anywhere;color:var(--paper);font-size:16px;letter-spacing:.03em;
+    padding:8px 12px;background:rgba(8,8,12,.88);border:1px solid rgba(232,226,214,.18)}
+  .sd-aim{min-width:0;overflow-wrap:anywhere;color:var(--paper);font-size:16px;letter-spacing:.06em;
+    padding:8px 12px;background:rgba(8,8,12,.88);border:1px solid rgba(232,226,214,.18)}
+
+  /* ---------------------------------------------------------------- overlays */
+  .sd-overlay{position:absolute;inset:0;display:grid;place-items:center;padding:24px;
+    background:rgba(6,7,10,.86);backdrop-filter:blur(2px);z-index:20;overflow:auto}
+  .sd-hidden{display:none !important}
+  .sd-card{width:min(760px,100%);background:linear-gradient(180deg,rgba(18,20,26,.98),rgba(9,10,14,.98));
+    border:1px solid rgba(255,209,102,.22);padding:26px 28px;box-shadow:0 30px 90px rgba(0,0,0,.6)}
+  .sd-card-wide{width:min(900px,100%)}
+  .sd-kicker{color:var(--amber);font-size:10.5px;letter-spacing:.28em;margin-bottom:8px}
+  .sd-h2{font-size:22px;letter-spacing:.06em;margin:0 0 10px;font-weight:700}
+  .sd-h3{font-size:11px;letter-spacing:.24em;color:var(--amber);margin:18px 0 8px}
+  .sd-note{color:var(--dim);font-size:12.5px;line-height:1.6;margin:8px 0 14px}
+  .sd-dim{opacity:.66}
+  .sd-button-row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+  button{font:inherit;cursor:pointer;letter-spacing:.1em;font-size:11.5px;padding:10px 16px;
+    background:transparent;color:var(--paper);border:1px solid rgba(232,226,214,.28);
+    transition:background .12s,border-color .12s,color .12s}
+  button:hover,button:focus-visible{border-color:var(--amber);color:var(--amber);outline:none}
+  .sd-primary{background:var(--amber);color:#14100a;border-color:var(--amber);font-weight:700}
+  .sd-primary:hover,.sd-primary:focus-visible{background:#ffdf90;color:#14100a}
+  .sd-secondary{color:var(--paper)}
+
+  /* title */
+  .sd-title{background:
+      radial-gradient(120% 80% at 50% 108%, rgba(255,138,61,.34), transparent 62%),
+      radial-gradient(90% 60% at 50% 118%, rgba(255,209,102,.22), transparent 70%),
+      linear-gradient(180deg,#120a1c 0%, #1b0f22 38%, #08080b 100%)}
+  .sd-title-card{width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto}
+  .sd-title-main{font-size:clamp(34px,7vw,64px);letter-spacing:.16em;margin:6px 0 2px;font-weight:700;
+    color:#fff2d6;text-shadow:0 0 28px rgba(255,160,80,.35)}
+  .sd-title-sub{color:rgba(232,226,214,.6);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:22px}
+  .sd-repo-card{border:1px solid rgba(255,209,102,.18);background:rgba(8,9,13,.55);padding:12px 14px;margin-bottom:18px}
+  .sd-repo-name{color:var(--amber);font-size:15px;letter-spacing:.05em}
+  .sd-repo-meta{color:var(--dim);font-size:11px;letter-spacing:.06em;margin-top:3px}
+  .sd-warn{margin:8px 0 0;padding-left:16px;color:#ffb3bd;font-size:11px}
+  .sd-empty{border:1px solid rgba(224,58,82,.4);background:rgba(38,8,13,.5);padding:12px 14px;margin-bottom:16px}
+  .sd-empty-title{color:#ff8798;letter-spacing:.16em;font-size:11px;margin-bottom:6px}
+  .sd-empty-body{font-size:12.5px;line-height:1.55}
+  .sd-empty-detail{color:var(--dim);font-size:11px;margin-top:6px}
+  .sd-chambers{display:grid;gap:6px;margin:6px 0 16px}
+  .sd-chamber-button{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;
+    text-align:left;padding:10px 14px;border:1px solid rgba(232,226,214,.16);background:rgba(255,255,255,.015)}
+  .sd-chamber-button:hover{border-color:var(--amber);background:rgba(255,209,102,.05)}
+  .sd-cb-index{color:rgba(255,209,102,.6);font-size:11px}
+  .sd-cb-title{color:var(--paper);letter-spacing:.08em;font-size:12.5px}
+  .sd-cb-kind{color:rgba(232,226,214,.42);font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+  .sd-title-foot{color:rgba(232,226,214,.42);font-size:10.5px;letter-spacing:.14em;margin-top:10px}
+  .sd-controls{margin-top:18px;padding-top:14px;border-top:1px solid rgba(232,226,214,.12);
+    color:rgba(232,226,214,.5);font-size:11px;line-height:1.9;letter-spacing:.04em}
+  .sd-controls b{color:var(--amber);font-weight:700}
+  .sd-details{margin-top:14px;border-top:1px solid rgba(232,226,214,.12);padding-top:10px}
+  .sd-details summary{color:var(--amber);font-size:12px;letter-spacing:.12em;cursor:pointer}
+  .sd-un-head{color:var(--amber);font-size:12px;letter-spacing:.12em}
+  .sd-unavailable{margin-top:10px}
+  .sd-un-line{color:rgba(232,226,214,.68);font-size:12px;margin-top:4px;overflow-wrap:anywhere}
+
+  /* settings */
+  .sd-settings{margin-top:16px;border-top:1px solid rgba(232,226,214,.12);padding-top:6px}
+  .sd-row{display:grid;grid-template-columns:1fr 190px 52px;gap:12px;align-items:center;
+    padding:7px 0;font-size:11.5px;color:var(--dim);cursor:pointer}
+  .sd-row input[type=range]{width:100%;accent-color:#ffd166}
+  .sd-row-value{text-align:right;color:var(--paper);font-size:11px}
+  .sd-check{justify-self:start;width:16px;height:16px;accent-color:#ffd166}
+
+  /* key table */
+  .sd-keytable{display:grid;gap:5px;margin:12px 0}
+  .sd-keyrow{display:grid;grid-template-columns:220px 1fr;gap:14px;font-size:11.5px;
+    border-bottom:1px dashed rgba(232,226,214,.08);padding-bottom:5px}
+  .sd-key{color:var(--amber);letter-spacing:.1em}
+  .sd-keydesc{color:var(--dim)}
+
+  /* terminal */
+  .sd-terminal{display:block;line-height:1.55}
+  .sd-terminal .sd-card{margin:0 auto;overflow-wrap:anywhere}
+  .sd-terminal .sd-note,.sd-terminal .sd-kicker,.sd-terminal button{font-size:16px;line-height:1.55}
+  .sd-terminal .sd-dim{opacity:1;color:var(--dim)}
+  .sd-terminal-path{color:var(--dim);font-size:16px;margin-bottom:14px}
+  .sd-evidence-list{display:grid;gap:12px;margin:8px 0 16px}
+  .sd-evidence{border-left:2px solid rgba(255,209,102,.5);padding:8px 12px;background:rgba(255,209,102,.04)}
+  .sd-evidence-head{display:flex;gap:10px;align-items:baseline;min-width:0}
+  .sd-evidence-index{color:var(--amber);font-size:16px;flex:none}
+  .sd-evidence-path{color:var(--amber);font-size:16px;letter-spacing:.02em;min-width:0;overflow-wrap:anywhere}
+  .sd-evidence-code{margin:8px 0 6px;padding:8px 10px;background:rgba(0,0,0,.45);
+    color:#dfe7ef;font-size:16px;line-height:1.55;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+  .sd-evidence-arrow{color:#9fc2ff;font-size:16px;letter-spacing:.03em}
+  .sd-evidence-summary{color:var(--dim);font-size:16px;margin-top:5px}
+  .sd-evidence-scope{color:#ffb3bd;font-size:16px;letter-spacing:.04em;margin-top:7px}
+  .sd-terminal .sd-scope-note{color:var(--dim);font-size:16px}
+
+  /* completion */
+  .sd-stats{display:grid;gap:6px;margin:14px 0 18px}
+  .sd-stat{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(232,226,214,.1);
+    padding-bottom:5px;font-size:11.5px;color:var(--dim)}
+  .sd-stat-v{color:var(--amber)}
+
+  /* boot error */
+  #sd-boot-error{display:none;position:absolute;inset:0;z-index:60;background:#0a0b0f;
+    padding:40px;overflow:auto;color:#ffb3bd;font:12px/1.6 var(--mono)}
+  #sd-boot-error h2{color:#e03a52;letter-spacing:.2em;font-size:14px}
+  #sd-boot-error pre{white-space:pre-wrap;color:#cfc7b8}
+
+  .sd-error-detail{white-space:pre-wrap;color:var(--dim);font-size:12px}
+
+  @media (max-width:720px){
+    .sd-objective{display:none}
+    .sd-hint{display:none}
+    .sd-row{grid-template-columns:1fr 120px 44px}
+  }
+  /* Short windows have no vertical room for the legend plus the refusal stack.
+     The stack is anchored to the fold and grows upward, so a wrapped line
+     anywhere in it eats the clearance to the top-anchored objective: at 616 px
+     tall the longest refusal pair lands 7.96 px from the objective panel, 0.04 px
+     short of the 8 px bar, and at 560 px it overprints the panel by 48.04 px
+     (ink by 26.86 px, text over text). Two things give way here, in this order:
+     the legend (which the help overlay, H, still carries in full) and then the
+     pointer cue (.sd-subtitle). The cue only restates the toast's
+     "refused: <label>" opener and points at a panel the player is already
+     looking at, and dropping its 3 wrapped lines at 721 px wide is worth 93.56 px
+     of stack height. Measured on the shipped payload's worst copy, the toast
+     alone then clears the objective panel by 45.52 px at 721x560, 85.52 px at
+     721x600 and 68.71 px at 900x560. The cue returns at 621 px tall. Re-measure
+     before moving either cut-off. */
+  @media (max-height:620px){
+    .sd-hint{display:none}
+    .sd-subtitle{display:none}
+  }
+  /* 560 px tall is the declared minimum supported height (UI_UX_REVIEW.md).
+     Below it the compact stack still degrades with every lost pixel - the panel
+     clearance at 721 px wide is +5.52 px at 520 tall and -14.48 at 500 - so the
+     objective gives way, the same decision the width rule makes below 720 px
+     wide. Nothing overlaps there because there is nothing left to overlap: the
+     refusal copy is the last thing on the stack to go. */
+  @media (max-height:559px){
+    .sd-objective{display:none}
+    /* The title must stay usable at the declared minimum height: shrink the
+       mark and the chrome so the ENTER button and the chamber list are reachable. */
+    .sd-title-main{font-size:30px}
+    .sd-title-sub{margin-bottom:10px}
+    .sd-card{padding:14px 16px}
+    .sd-boot-mark{font-size:30px}
+  }
+  /* Narrow, short windows are the one place where the objective, the legend and
+     an 84ch refusal cannot all be paid for. At 721x621 (the objective gives way
+     at 720 px wide, the legend at 620 px tall, so both are still drawn) the
+     317-char refusal takes 6 lines, the cue 3, and the two-column feedback row
+     5: the stack overprinted the objective by 56.6 px, two thirds of it in the
+     feedback row, where the aim label had a 240 px column and the legend 3
+     lines. Below 760 px wide and 700 px tall the feedback row therefore stops
+     being a two-column table: the aim label gets the full width (its 57-char
+     module id drops from 5 lines to 2) and the legend, which the help overlay
+     (H) still carries in full, gives up the rest. The objective stays drawn -
+     it is the only surface that states the goal, so it is the last thing to go.
+     Worst real copy then clears by 12.96 px at 721x621 and 31.96 px at
+     721x640; nothing outside the band changes (740x900 keeps both columns).
+     Re-measure before widening the band or raising the height. */
+  @media (max-width:760px) and (max-height:700px){
+    .sd-feedback{grid-template-columns:minmax(0,1fr)}
+    .sd-hint{display:none}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .sd-ring{transition:none}
+    .sd-subtitle,.sd-toast{transition:none}
+  }
+/* RepoRealm / sunset alloy. Presentation-only layer. */
+@font-face{font-family:Realm;src:url('{{ASSET:space-grotesk-400.woff2}}') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Realm;src:url('{{ASSET:space-grotesk-700.woff2}}') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:RealmCode;src:url('{{ASSET:jetbrains-mono-400.woff2}}') format('woff2');font-weight:400;font-display:swap}
+:root{--ink:#100c20;--ink-2:#1b1731;--paper:#fff1dc;--dim:#c0b8cf;--amber:#ffcf83;--mono:RealmCode,monospace;--ui:Realm,system-ui,sans-serif;--ease:cubic-bezier(.22,1,.36,1)}
+html,body{font:16px/1.5 var(--ui)}
+.sd-scanlines,#sd-root.sd-crt .sd-scanlines{display:none}
+.sd-overlay{backdrop-filter:none;background:rgba(12,9,24,.86)}
+.sd-title{padding:0;background:linear-gradient(90deg,rgba(11,8,23,.98),rgba(11,8,23,.83) 36%,rgba(11,8,23,.05) 73%);overflow:auto}
+.rr-menu{position:relative;width:100%;min-height:100%;padding:30px 5vw;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr auto;gap:34px}
+.rr-menu-head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #d2c1e329;padding-bottom:20px}
+.rr-brand{font-size:25px;font-weight:700;letter-spacing:-1px}.rr-edition{font:11px var(--mono);letter-spacing:.12em;color:#cbbddc}
+.rr-menu-body{align-self:center;max-width:540px;padding:24px 0}.sd-kicker{font:11px/1.6 var(--mono);letter-spacing:.16em;color:var(--amber)}
+.rr-headline{white-space:pre-line;font-size:clamp(44px,5.7vw,88px);line-height:.98;font-weight:700;letter-spacing:-.065em;margin:24px 0;color:#fff1dc}
+.rr-intro{max-width:33ch;font-size:18px;line-height:1.6;color:#c9c0d7;margin:26px 0}
+button,summary{font-family:var(--ui);font-size:14px;letter-spacing:0;min-height:44px}
+button{position:relative;border-radius:7px;border-color:#e4ccef40;background:#211a35;transition:transform .24s var(--ease),background .2s,border-color .2s,box-shadow .24s;isolation:isolate}
+button:hover{transform:translateY(-3px);background:#302342;box-shadow:0 8px 24px #0004;border-color:var(--amber)}
+button:active{transform:translateY(1px) scale(.98);box-shadow:none}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid #73e6f0;outline-offset:5px}
+.sd-primary{color:#281329;background:#ffcf83;border:1px solid #ffe3ad;font-weight:700;box-shadow:0 4px 0 #b45a62}
+.sd-primary:hover{background:#ffe2b0;color:#281329;box-shadow:0 7px 0 #b45a62,0 12px 30px #ff8b5226}
+.rr-play{font-size:19px;padding:17px 27px;min-width:250px;text-align:left;overflow:hidden}
+.rr-play:after{content:'';position:absolute;inset:-90% -30%;background:linear-gradient(105deg,transparent 40%,#fff8 50%,transparent 60%);transform:translateX(-110%);transition:transform .7s var(--ease)}
+.rr-play:hover:after,.rr-play:focus-visible:after{transform:translateX(110%)}
+.rr-play-note{font-size:12px;color:#bdb1ca;margin:15px 0 28px}
+.rr-menu-nav{display:flex;align-items:start;flex-wrap:wrap;gap:8px}.rr-menu-nav>button{background:#140f23bb;border-color:#e4ccef30;padding:10px 18px}
+summary{cursor:pointer;padding:10px 2px;color:#e9dbf2}.rr-settings>summary{padding:10px 18px;border:1px solid #e4ccef30;border-radius:7px}
+.rr-settings[open]{position:relative;z-index:4}.rr-settings .sd-settings{position:absolute;width:min(430px,85vw);left:0;background:#191227;border:1px solid #796185;padding:20px;box-shadow:0 20px 60px #0008;z-index:5}
+.rr-vista-label{align-self:end;justify-self:end;display:flex;align-items:center;white-space:pre-line;gap:16px;font:12px/1.7 var(--mono);color:#f6dcc0;text-shadow:0 2px 5px #000}.rr-vista-index{font:60px var(--ui);color:#ffce81}
+.rr-menu-footer{grid-column:1/-1;display:flex;justify-content:space-between;align-items:end;gap:20px;font:12px/1.6 var(--mono);color:#c0b4d1}.rr-repository-notes{max-width:440px}.rr-repository-notes[open]{background:#161024f5;padding:16px;border:1px solid #7d5f87}
+.rr-shelf{position:absolute;z-index:6;right:4vw;top:100px;bottom:90px;width:min(560px,90vw);overflow:auto;padding:28px;background:#181124f5;border:1px solid #b68ab767;border-radius:14px;box-shadow:0 30px 90px #0009;animation:rr-reveal .45s var(--ease) both}
+.sd-chamber-button{width:100%;margin:9px 0;padding:16px;min-height:70px;background:linear-gradient(110deg,#30213d,#1d172e);border:1px solid #a586b039;border-radius:8px;animation:rr-reveal .45s var(--ease) both;animation-delay:calc(var(--i)*45ms)}
+.sd-chamber-button:hover,.sd-chamber-button:focus-visible{transform:translateX(-5px);background:#3a274b;box-shadow:6px 0 0 #ffbd78}.sd-cb-title{font:700 16px var(--ui);letter-spacing:-.02em}.sd-cb-index,.sd-cb-kind{font:11px var(--mono);color:#cbbed8}.rr-close{margin-top:14px}
+.sd-boot{background:#0d0919}.rr-opening{width:min(1040px,94vw);text-align:center;animation:rr-reveal .8s var(--ease)}.rr-poster{display:block;width:100%;max-height:72vh;object-fit:contain;margin:0 auto 20px}.rr-opening .sd-kicker{margin:12px 0 20px}
+.sd-card{background:linear-gradient(140deg,#251c35fa,#131022fc);border:1px solid #c69bcc50;border-radius:14px;box-shadow:0 30px 100px #0008;animation:rr-reveal .35s var(--ease);padding:30px}
+.sd-h2{font-size:30px;letter-spacing:-.035em}.sd-note{font:16px/1.7 var(--ui)}.sd-h3{font:12px var(--mono)}
+.sd-row,.sd-keyrow,.sd-stat{font:14px/1.5 var(--ui);padding:10px 0}.sd-check{width:22px;height:22px}.sd-row-value{font-size:13px}
+.sd-terminal .sd-card{max-width:980px}.sd-terminal-path{font:18px/1.55 var(--ui);color:#f4dfc9;max-width:64ch}.sd-evidence{border:1px solid #9580b14a;border-left:3px solid #ca9cb7;border-radius:8px;padding:18px;background:#0f0d1b}.sd-evidence-code{font:16px/1.7 var(--mono);background:#080711;border-radius:6px;padding:18px;color:#e7e1f5}.sd-evidence-path{font-family:var(--mono);color:#ffd49c}.sd-evidence-arrow{color:#9bd7e7}.sd-evidence-scope{color:#e6c5db;font-size:16px;border-top:1px solid #9683a52c;padding-top:12px}
+.sd-hud{font-family:var(--ui);letter-spacing:0;text-shadow:none}.sd-header{top:24px;left:24px;right:24px;gap:8px}.sd-top{padding:10px 14px;background:#120d23e8;border-left:3px solid #e5b27d;border-radius:0 8px 8px 0;width:fit-content}.sd-chamber{font:700 16px var(--ui);letter-spacing:-.02em}.sd-repo{font:11px var(--mono);color:#c9bcd8;margin-top:3px}
+.sd-objective{display:block;max-width:48ch;padding:10px 14px;font:15px/1.5 var(--ui);border:1px solid #d1adcb29;border-radius:8px;background:#120d23e8}.sd-status{border-radius:8px;background:#120d23eb;border-color:#d1adcb29;gap:14px}.sd-slot{border-radius:50%;font:12px var(--mono)}.sd-plates{font:12px var(--mono)}
+.sd-bottom{left:24px;right:24px;bottom:24px}.sd-feedback{grid-template-columns:minmax(0,1fr) minmax(200px,.65fr);padding-right:110px}.sd-hint{font:12px/1.6 var(--ui);align-self:end;background:#120d23c9;border:0;border-radius:6px}.sd-aim{font:14px/1.5 var(--ui);background:#120d23e8;border-radius:8px;border-color:#d1adcb29}.sd-hintchip{border-radius:7px;font:12px var(--ui);min-height:44px;bottom:0;background:#20152e}.sd-toast,.sd-subtitle,.sd-hintpanel{border-radius:8px;font-family:var(--ui);background:#120d23f5}.sd-toast-bad{color:#ffd5de}.sd-toast-good{color:#d6ffe2}.sd-subtitle{font-style:normal;font-size:15px}.sd-hintpanel{font-size:16px;border-color:#cdb3d165}
+.sd-ring{transition:transform .25s var(--ease),border-color .25s}.sd-ring-use{border-width:2px}.sd-slot.sd-active{box-shadow:none}.sd-slot{transition:background .3s,transform .3s}.sd-slot.sd-active{transform:scale(1.12)}
+@keyframes rr-reveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+[data-reduced-motion=true] *,[data-reduced-motion=true] *:before,[data-reduced-motion=true] *:after,[data-page-hidden=true] *{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media(max-width:800px){.rr-menu{padding:20px 6vw;grid-template-columns:1fr;gap:20px}.rr-edition{display:none}.rr-menu-body{max-width:440px}.rr-vista-label{display:none}.rr-headline{font-size:clamp(44px,10vw,66px)}.rr-menu-footer{flex-wrap:wrap}.sd-title{background:linear-gradient(90deg,#100b20ee,#100b20a8)}.sd-header{left:14px;right:14px;top:14px}.sd-status{grid-row:1;gap:8px;padding:8px}.sd-objective{grid-column:1/-1;font-size:14px;max-width:100%}.sd-bottom{left:14px;right:14px;bottom:14px}.sd-feedback{grid-template-columns:1fr;padding-right:110px}.sd-hint{display:none}.sd-keyrow{grid-template-columns:1fr 1fr}.sd-card{padding:22px}.rr-shelf{top:85px;bottom:40px}.sd-cb-kind{display:none}.sd-chamber-button{grid-template-columns:30px 1fr}.sd-chamber{font-size:14px}.sd-repo{font-size:10px}.sd-terminal{padding:12px}}
+@media(max-height:620px){.rr-menu{gap:16px}.rr-menu-body{padding:0}.rr-headline{font-size:46px;margin:12px 0}.rr-intro{margin:14px 0;font-size:16px}.rr-play-note{margin-bottom:14px}.sd-top{padding:7px 10px}.sd-objective{font-size:13px;max-width:60ch}.rr-poster{max-height:60vh}}
+.rr-full-task{padding:16px 18px;border-left:3px solid var(--amber);background:#120d23b8;border-radius:0 8px 8px 0;white-space:pre-wrap;overflow-wrap:anywhere}.sd-terminal-path{overflow-wrap:anywhere}
+@media(max-height:559px){.sd-objective{display:none}}
+</style>
+<!-- Embedded type licences, verbatim:
+{{FONT_NOTICES}}
+-->
+</head>
+<body>
+<img id="rr-poster-asset" src="{{ASSET:RepoRealm.png}}" alt="" hidden />
+<div id="sd-root"></div>
+<div id="sd-boot-error"></div>
+<script>window.SOURCE_DRIVE_DATA = {{DATA}};</script>
+<script>{{BUNDLE}}</script>
+</body>
+</html>

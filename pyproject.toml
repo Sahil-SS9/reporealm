@@ -1,0 +1,40 @@
+# RepoRealm - project metadata for the Hermes Git-directory plugin.
+#
+# Distribution is the Hermes plugin directory: a clone of this repository with
+# plugin.yaml and __init__.py at its root, installed into the Hermes plugin
+# directory. The frontend builder (scripts/build_web.py) and the game sources
+# (web/) live beside the Python packages and are resolved from the checkout, so
+# a wheel or sdist would not carry a runnable frontend. No wheel is built,
+# shipped or verified; nothing is published to PyPI.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reporealm"
+version = "0.3.0"
+description = "Turn a repository's static import graph into a playable first-person reading chamber"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Sahil Saghir" }]
+keywords = ["hermes-plugin", "codebase-visualisation", "static-analysis"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = []
+
+[project.scripts]
+reporealm = "sourcedrive.cli:main"
+
+[tool.setuptools]
+# ``sourcedrive`` is the internal implementation; ``reporealm`` is the public
+# wrapper (``python -m reporealm``). Both ship so neither import path breaks.
+packages = ["sourcedrive", "reporealm"]

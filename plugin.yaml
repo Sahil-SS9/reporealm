@@ -1,0 +1,23 @@
+name: reporealm
+version: 0.3.0
+manifest_version: 2
+description: >
+  Turn repository source evidence into a playable first-person portal puzzle.
+  Carry module-name cubes onto weighted plates, solve entry-point and static
+  import challenges, and physically cross the exits. Analysis is read-only and
+  never executes repository code.
+author: Sahil Saghir
+license: MIT
+requires_hermes: ">=0.20.1"
+
+provides_tools:
+  - reporealm_chambers
+
+requires_env: []
+python_dependencies: []
+
+config_schema:
+  port:
+    type: int
+    default: 7788
+    description: Loopback port for the managed game server (127.0.0.1 only).

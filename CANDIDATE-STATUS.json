@@ -1,0 +1,201 @@
+{
+  "status": "LOCAL CANDIDATE ONLY \u2014 NOT RELEASE ACCEPTED OR PUBLIC",
+  "as_at_utc": "2026-11-11T21:58:51.540352+00:00",
+  "runtime_files": [
+    {
+      "path": "__init__.py",
+      "sha256": "d45fbeaac5cfcfb21dbc823ec0387026b1fdc38363fa8d51d8e8192f4bc51bd8"
+    },
+    {
+      "path": "analyse.py",
+      "sha256": "edf51b7d73c170b2cc765a0ac69089416ce15c53a0f78e7777269020521b5301"
+    },
+    {
+      "path": "plugin.yaml",
+      "sha256": "e33306094dd3978244559ec3e0369bf8bf8d10e360861defdf3438a84b2abf7e"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "399e6076946306cf3c9b31b8df61a6c0c26e440d9d57d8dec31d302eccaed8d9"
+    },
+    {
+      "path": "reporealm/__init__.py",
+      "sha256": "a5b21328be8d866476c522bb1b5b900852d2525987e0559934ffcc8ba94a469e"
+    },
+    {
+      "path": "reporealm/__main__.py",
+      "sha256": "8282ee6e523d4f4d91dd9bba17b88e29db0b05e6d798c7d57627b7d694f744de"
+    },
+    {
+      "path": "scripts/build_web.py",
+      "sha256": "2663ee0ca41db4defffacee5797a54aeff7e7cb484181293d5736b53452a1737"
+    },
+    {
+      "path": "sourcedrive/__init__.py",
+      "sha256": "64c8a09700f05a7905641983a3c2c1fc3ad934aa1eeedca0820f677e55031b10"
+    },
+    {
+      "path": "sourcedrive/__main__.py",
+      "sha256": "d7f4a416c127a95290be4e53e9593d4a8b8811456fbeb04ef84fdcfc6b1dbd04"
+    },
+    {
+      "path": "sourcedrive/cache.py",
+      "sha256": "16bde50b6076af42823578ca46432b41c44e5ebaab7baa92b40a755b9528dff5"
+    },
+    {
+      "path": "sourcedrive/cli.py",
+      "sha256": "5831285594f1a5766b3a8fd70e36d41d39564490657ded37d8d60f080c2f5c2f"
+    },
+    {
+      "path": "sourcedrive/entry.py",
+      "sha256": "c59f4a981e886dd6fbb41fecff20b0ce454faf1e957f5d1daf780ec260b58419"
+    },
+    {
+      "path": "sourcedrive/jsgraph.py",
+      "sha256": "a370f9d1f41e7561ff7bd68cf4be437207076afad34d99d5cd8b15554c3eb3d0"
+    },
+    {
+      "path": "sourcedrive/levels.py",
+      "sha256": "76dc1c6ca68edcdf59a0c6b8e83d9f7772fbe4ceb42f6f52c29039747895755b"
+    },
+    {
+      "path": "sourcedrive/payload.py",
+      "sha256": "48f2d3fa89fb7113291502b9b3184640b49ba824501c76257258f9cc90d96ba2"
+    },
+    {
+      "path": "sourcedrive/pygraph.py",
+      "sha256": "bfa4a2d0a97b6b206f0c6a0d8c14f61327d7c161662007499742b86a4aa088ff"
+    },
+    {
+      "path": "sourcedrive/scan.py",
+      "sha256": "8977c369060f002f34f36d3499eb590574476e42b84d011256b0735dedb79b24"
+    },
+    {
+      "path": "sourcedrive/server.py",
+      "sha256": "ec4de798ecb2231866949c92f1ef85f334f4f9e5528192cfd79a0a84479f59e5"
+    },
+    {
+      "path": "sourcedrive/toolapi.py",
+      "sha256": "851d0ac21c836b7bfc0059b91c3879b370042439c17cb46a5a74bbdfca5e3fd1"
+    },
+    {
+      "path": "web/NOTICE.md",
+      "sha256": "36337404f5f9e0f3218ca9b9441c06d9290586c428a52e85e419a1ba4f99fa11"
+    },
+    {
+      "path": "web/assets/reporealm/OFL-JetBrains-Mono.txt",
+      "sha256": "b2fe5e8987594e9ffd1d2ca52a2f5d73eb8335243893c5d6254b5ad69269591d"
+    },
+    {
+      "path": "web/assets/reporealm/OFL-Space-Grotesk.txt",
+      "sha256": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72"
+    },
+    {
+      "path": "web/assets/reporealm/RepoRealm.png",
+      "sha256": "a2b125b6f2fe08a64ad48da7908113e4c01e81f5d2845c16316bcb927068c442"
+    },
+    {
+      "path": "web/assets/reporealm/jetbrains-mono-400.woff2",
+      "sha256": "14425ba9c695763c1547f48a206b7aa60350a33ae23de09f0407877f3fcd89eb"
+    },
+    {
+      "path": "web/assets/reporealm/space-grotesk-400.woff2",
+      "sha256": "65fd17fcbd2e2f522940b5f67ead3d23329e02891aa5495e74d11a499c0b0673"
+    },
+    {
+      "path": "web/assets/reporealm/space-grotesk-700.woff2",
+      "sha256": "35f8aec56cfd5cbfdb03cc68733a54a0b05bb3617ffcd5fd332badc0b045ca55"
+    },
+    {
+      "path": "web/shell.html",
+      "sha256": "78cd03aacf50959ffff47f295dec3407ba8fe5267debed60e33ace1980ede9b5"
+    },
+    {
+      "path": "web/src/01-core.js",
+      "sha256": "eb336cbc70c6409fdf459c3fb059b61b68071068fa3729432069b0d68302df13"
+    },
+    {
+      "path": "web/src/02-payload.js",
+      "sha256": "bb4aa2f4a78c5975c11b1c1c56d090a9c2b8fae222aa9462a4e4f0c33c438586"
+    },
+    {
+      "path": "web/src/03-physics.js",
+      "sha256": "61fd162ecb94c178754c9b81ae1d871ea88011f8a13b6c43ccebfe6eedfbf764"
+    },
+    {
+      "path": "web/src/04-portals.js",
+      "sha256": "23683a2b478799d9a33efbfb46895b8866d7771161f0378b63a56462fcd82bb8"
+    },
+    {
+      "path": "web/src/05-player.js",
+      "sha256": "38ea604fa9728b895725de68d7bf992cec044b9281078b4cf5dc99c60529f1c3"
+    },
+    {
+      "path": "web/src/06-levelgen.js",
+      "sha256": "d9ce6e90247e62f5424532901d767d7e829b1f01804c1b931184fcfca0184222"
+    },
+    {
+      "path": "web/src/07-sim.js",
+      "sha256": "7fe0a29e37d245e94439538f672e8e472a9b085c8b03292618e82c381f828cdf"
+    },
+    {
+      "path": "web/src/08-render.js",
+      "sha256": "d52b70f14ed460c2759461a00f0f9824d8f936830bcf991e38c960608acb9b5b"
+    },
+    {
+      "path": "web/src/08-world.js",
+      "sha256": "3badc0a89bf4e380779182caefb1056f3f58f7810ec0196e25b133e33dcdf837"
+    },
+    {
+      "path": "web/src/09-ui.js",
+      "sha256": "470f79fe3fe2c651bb2110fade5b7979c3186573a0dbe7091cded2e0a1725c68"
+    },
+    {
+      "path": "web/src/09-ux.js",
+      "sha256": "3ea4491172e8d282164ade33e41ca49d5bcf805630fbb8c3c83f7a5ce2b77471"
+    },
+    {
+      "path": "web/src/10-audio.js",
+      "sha256": "cea57ea97cf6ec74f1bf9f2c984834f2bae337fe226ed32ebe29648ec887cc56"
+    },
+    {
+      "path": "web/src/11-main.js",
+      "sha256": "7659f37dc67258b6ebcd3116a31e6a2fae18f3837e9dbe7d76be8d80908c7d03"
+    },
+    {
+      "path": "web/vendor/THREE-LICENSE.txt",
+      "sha256": "fbf3943930dacbf56aabb8dc5d816440bd16aa6f4cc78ddbdf12106ee1807832"
+    },
+    {
+      "path": "web/vendor/three.min.js",
+      "sha256": "f34446bf875b5fb0dcd93819ffe1d9e182d46634ee855f5d904c6c4ac7cdbc95"
+    }
+  ],
+  "checks": {
+    "backend_summary": [
+      "Ran 160 tests in 8.809s",
+      "OK"
+    ],
+    "node_summary": [
+      "sim: weighbridge door plate",
+      "  ok   the door plate must feel the player with the set complete, then latches",
+      "",
+      "73 passed, 0 failed, 73 total"
+    ],
+    "browser_successes_so_far": 14,
+    "browser_failure_lines": [
+      "FAIL [12/39] test_gameplay::test_momentum_fling_crosses_the_trench  (171.5s)"
+    ],
+    "browser_full_run": "PENDING; not accepted",
+    "fresh_six_room_run": "PARTIAL; tutorial completed, entry onGround wait assertion failed",
+    "minimum_hermes_runtime_floor": "NOT PROVEN; declared 0.20.1 is source-surface evidence only",
+    "movie": "82.517-second review MP4 decodes; required portal/carry/plate/exit footage missing; NOT submission-ready",
+    "licensing": {
+      "declared_metadata": {
+        "text": "MIT"
+      },
+      "standalone_root_license_file_missing": true
+    }
+  },
+  "distribution": "42 runtime sources/assets; generated HTML copies excluded from Git package. Offline HTML retained separately."
+}
